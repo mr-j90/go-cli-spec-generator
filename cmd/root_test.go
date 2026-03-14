@@ -7,6 +7,8 @@ import (
 
 func TestRootCommand(t *testing.T) {
 	buf := new(bytes.Buffer)
+func TestRootCmd(t *testing.T) {
+	buf := &bytes.Buffer{}
 	rootCmd.SetOut(buf)
 	rootCmd.SetErr(buf)
 	rootCmd.SetArgs([]string{"--help"})
@@ -18,5 +20,9 @@ func TestRootCommand(t *testing.T) {
 	output := buf.String()
 	if output == "" {
 		t.Error("expected help output, got empty string")
+	}
+	err := rootCmd.Execute()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }

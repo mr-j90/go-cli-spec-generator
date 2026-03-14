@@ -10,6 +10,7 @@ import (
 var rootCmd = &cobra.Command{
 	Use:   "go-spec",
 	Short: "AI-powered spec generator CLI",
+	Short: "An AI-powered spec generator",
 	Long:  `go-spec is a CLI tool that uses AI to generate specs based on user inputs.`,
 }
 
@@ -17,6 +18,8 @@ var rootCmd = &cobra.Command{
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
+	err := rootCmd.Execute()
+	if err != nil {
 		os.Exit(1)
 	}
 }
