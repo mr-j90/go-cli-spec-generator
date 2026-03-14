@@ -13,6 +13,7 @@ type FeatureArea struct {
 	ID          string
 	DisplayName string
 	Description string
+	Icon        string
 }
 
 // Question defines a single question in the spec flow.
@@ -60,31 +61,73 @@ var FeatureAreas = map[string]FeatureArea{
 		ID:          "authentication",
 		DisplayName: "Authentication",
 		Description: "User authentication and authorization",
+		Icon:        "🔐",
 	},
 	"storage": {
 		ID:          "storage",
 		DisplayName: "Storage",
 		Description: "Data storage and persistence",
+		Icon:        "💾",
 	},
 	"api": {
 		ID:          "api",
 		DisplayName: "API",
 		Description: "External API endpoints",
+		Icon:        "🔌",
 	},
 	"testing": {
 		ID:          "testing",
 		DisplayName: "Testing",
 		Description: "Testing strategy and coverage",
+		Icon:        "🧪",
 	},
 	"observability": {
 		ID:          "observability",
 		DisplayName: "Observability",
 		Description: "Logging, metrics, and tracing",
+		Icon:        "📈",
 	},
 	"deployment": {
 		ID:          "deployment",
 		DisplayName: "Deployment",
 		Description: "Deployment and infrastructure",
+		Icon:        "🚀",
+	},
+	"security": {
+		ID:          "security",
+		DisplayName: "Security",
+		Description: "Security hardening and vulnerability management",
+		Icon:        "🛡",
+	},
+	"caching": {
+		ID:          "caching",
+		DisplayName: "Caching",
+		Description: "Caching strategies and performance optimization",
+		Icon:        "⚡",
+	},
+	"messaging": {
+		ID:          "messaging",
+		DisplayName: "Messaging",
+		Description: "Message queues, pub/sub, and event streaming",
+		Icon:        "📨",
+	},
+	"search": {
+		ID:          "search",
+		DisplayName: "Search",
+		Description: "Full-text search and indexing",
+		Icon:        "🔍",
+	},
+	"notifications": {
+		ID:          "notifications",
+		DisplayName: "Notifications",
+		Description: "Email, push notifications, and webhooks",
+		Icon:        "🔔",
+	},
+	"configuration": {
+		ID:          "configuration",
+		DisplayName: "Configuration",
+		Description: "App configuration, feature flags, and environment management",
+		Icon:        "⚙",
 	},
 }
 

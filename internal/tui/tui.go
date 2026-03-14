@@ -2,43 +2,112 @@
 package tui
 
 import (
-	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
-// titleStyle is the default title style for the TUI.
-// TODO: expand styles as the TUI is implemented.
-var titleStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("62"))
+// tuiStep represents the current active step in the wizard.
+type tuiStep int
 
-// Model is the root Bubble Tea model for the spec generator TUI.
-// TODO: implement full TUI model with questions flow.
-type Model struct {
-	input textinput.Model
+const (
+	stepProfile  tuiStep = iota
+	stepFeatures         // future steps follow
+)
+
+// App is the root Bubble Tea model that manages step navigation across all steps.
+type App struct {
+	step     tuiStep
+	profile  ProfileModel
+	features FeaturesModel
+	quitting bool
 }
 
-// New creates a new TUI model.
-func New() Model {
-	ti := textinput.New()
-	ti.Placeholder = "Describe your spec..."
-	ti.Focus()
-	return Model{input: ti}
+// Result holds the final selections produced by the TUI.
+type Result struct {
+	ProfileID  string
+	FeatureIDs []string
 }
 
-func (m Model) Init() tea.Cmd { return textinput.Blink }
-
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		if msg.Type == tea.KeyCtrlC || msg.Type == tea.KeyEsc {
-			return m, tea.Quit
-		}
+// New creates a new App. Pass noColor=true to disable ANSI color output.
+func New(noColor bool) App {
+	initStyles(noColor)
+	return App{
+		step:     stepProfile,
+		profile:  NewProfileModel(),
+		features: NewFeaturesModel(),
 	}
-	m.input, cmd = m.input.Update(msg)
-	return m, cmd
 }
 
-func (m Model) View() string {
-	return titleStyle.Render("specgen") + "\n\n" + m.input.View() + "\n"
+func (a App) Init() tea.Cmd {
+	return a.profile.Init()
+}
+
+func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// Global quit on Ctrl+C regardless of step.
+	if key, ok := msg.(tea.KeyMsg); ok && key.Type == tea.KeyCtrlC {
+		a.quitting = true
+		return a, tea.Quit
+	}
+
+	switch msg := msg.(type) {
+	case profileConfirmedMsg:
+		_ = msg
+		a.step = stepFeatures
+		return a, nil
+
+	case featuresConfirmedMsg:
+		_ = msg
+		// Steps 3-5 are future work; finish for now.
+		a.quitting = true
+		return a, tea.Quit
+
+	case goBackMsg:
+		if a.step > stepProfile {
+			a.step--
+		}
+		return a, nil
+
+	case tea.WindowSizeMsg:
+		return a, nil
+	}
+
+	// Delegate to the active step model.
+	var cmd tea.Cmd
+	switch a.step {
+	case stepProfile:
+		a.profile, cmd = a.profile.Update(msg)
+	case stepFeatures:
+		a.features, cmd = a.features.Update(msg)
+	}
+	return a, cmd
+}
+
+func (a App) View() string {
+	if a.quitting {
+		return ""
+	}
+	switch a.step {
+	case stepProfile:
+		return a.profile.View()
+	case stepFeatures:
+		return a.features.View()
+	}
+	return ""
+}
+
+// Run launches the TUI program and returns the user's final selections.
+func Run(noColor bool) (Result, error) {
+	app := New(noColor)
+	p := tea.NewProgram(app)
+	finalModel, err := p.Run()
+	if err != nil {
+		return Result{}, err
+	}
+	finalApp, ok := finalModel.(App)
+	if !ok {
+		return Result{}, nil
+	}
+	return Result{
+		ProfileID:  finalApp.profile.SelectedID(),
+		FeatureIDs: finalApp.features.Selected(),
+	}, nil
 }
