@@ -11,7 +11,7 @@ var generateCmd = &cobra.Command{
 	Short: "Generate a spec",
 	Long:  `Generate an AI-powered spec based on user inputs.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Spec generation coming soon.")
+		fmt.Println("generate called — feature coming soon")
 	},
 }
 
