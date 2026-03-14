@@ -10,43 +10,37 @@ func TestRootCommand_Help(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !strings.Contains(output, "go-spec") {
-		t.Errorf("expected help output to contain 'go-spec', got: %s", output)
+	if !strings.Contains(output, "specgen") {
+		t.Errorf("expected help output to contain 'specgen', got: %s", output)
 	}
 }
 
-func TestRootCommandHasGenerateSubcommand(t *testing.T) {
-	found := false
-	for _, sub := range rootCmd.Commands() {
-		if sub.Use == "generate [description]" {
-			found = true
-			break
-		}
-	}
-	if !found {
-		t.Error("expected 'generate' subcommand to be registered")
-	"bytes"
-	"testing"
-)
-
-func TestRootCommand(t *testing.T) {
-	buf := new(bytes.Buffer)
-func TestRootCmd(t *testing.T) {
-	buf := &bytes.Buffer{}
-	rootCmd.SetOut(buf)
-	rootCmd.SetErr(buf)
-	rootCmd.SetArgs([]string{"--help"})
-
-	if err := rootCmd.Execute(); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	output := buf.String()
-	if output == "" {
-		t.Error("expected help output, got empty string")
-	}
-	err := rootCmd.Execute()
+func TestRootCommand_Version(t *testing.T) {
+	output, err := executeRoot([]string{"--version"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, Version) {
+		t.Errorf("expected version output to contain %q, got: %s", Version, output)
+	}
+}
+
+func TestRootCommand_NoColorFlag(t *testing.T) {
+	_, err := executeRoot([]string{"--no-color", "--help"})
+	if err != nil {
+		t.Fatalf("unexpected error with --no-color flag: %v", err)
+	}
+}
+
+func TestRootCommand_HasExpectedSubcommands(t *testing.T) {
+	expected := []string{"new", "generate", "resume", "version"}
+	registered := map[string]bool{}
+	for _, sub := range rootCmd.Commands() {
+		registered[sub.Name()] = true
+	}
+	for _, name := range expected {
+		if !registered[name] {
+			t.Errorf("expected subcommand %q to be registered", name)
+		}
 	}
 }
