@@ -7,32 +7,32 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Exit codes as defined in the spec.
+const (
+	ExitSuccess    = 0
+	ExitValidation = 1
+	ExitExport     = 2
+
+	Version = "0.1.0"
+)
+
+var noColor bool
+
 var rootCmd = &cobra.Command{
-	Use:   "go-spec",
-	Short: "AI-powered spec generator for Go projects",
-	Long:  `go-spec is a CLI tool that uses AI to generate specs based on user inputs.`,
+	Use:     "specgen",
+	Short:   "AI-powered spec generator CLI",
+	Long:    `specgen is an interactive CLI tool for generating structured specification documents.`,
+	Version: Version,
 }
 
+// Execute runs the root command and exits with the appropriate code on failure.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		os.Exit(1)
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(ExitValidation)
 	}
 }
 
 func init() {
-	rootCmd.AddCommand(generateCmd)
-}
-	Short: "AI-powered spec generator CLI",
-	Short: "An AI-powered spec generator",
-	Long:  `go-spec is a CLI tool that uses AI to generate specs based on user inputs.`,
-}
-
-// Execute runs the root command.
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-	err := rootCmd.Execute()
-	if err != nil {
-		os.Exit(1)
-	}
+	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "disable color output")
 }

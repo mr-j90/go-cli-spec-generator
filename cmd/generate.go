@@ -7,39 +7,36 @@ import (
 )
 
 var (
-	outputFile string
-	specType   string
+	generateInput  string
+	generateOutput string
+	generateFormat string
 )
 
 var generateCmd = &cobra.Command{
-	Use:   "generate [description]",
-	Short: "Generate a spec from a description",
-	Long:  `Generate an AI-powered spec document from a natural language description.`,
-	Args:  cobra.MinimumNArgs(1),
+	Use:   "generate",
+	Short: "Generate a spec document from an input file",
+	Long:  `Generate a specification document from an existing input file without launching the interactive TUI.`,
 	RunE:  runGenerate,
 }
 
-func init() {
-	generateCmd.Flags().StringVarP(&outputFile, "output", "o", "", "output file path (default: stdout)")
-	generateCmd.Flags().StringVarP(&specType, "type", "t", "feature", "spec type (feature, api, architecture)")
-}
-
 func runGenerate(cmd *cobra.Command, args []string) error {
-	description := args[0]
-	fmt.Fprintf(cmd.OutOrStdout(), "Generating %s spec for: %s\n", specType, description)
-	if outputFile != "" {
-		fmt.Fprintf(cmd.OutOrStdout(), "Output will be written to: %s\n", outputFile)
+	fmt.Fprintln(cmd.OutOrStdout(), "Generating spec document...")
+	if generateInput != "" {
+		fmt.Fprintf(cmd.OutOrStdout(), "Input: %s\n", generateInput)
 	}
+	if generateOutput != "" {
+		fmt.Fprintf(cmd.OutOrStdout(), "Output: %s\n", generateOutput)
+	}
+	if generateFormat != "" {
+		fmt.Fprintf(cmd.OutOrStdout(), "Format: %s\n", generateFormat)
+	}
+	// TODO: implement spec generation using internal/render and internal/export
 	return nil
-var generateCmd = &cobra.Command{
-	Use:   "generate",
-	Short: "Generate a spec",
-	Long:  `Generate an AI-powered spec based on user inputs.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("generate called — feature coming soon")
-	},
 }
 
 func init() {
 	rootCmd.AddCommand(generateCmd)
+	generateCmd.Flags().StringVarP(&generateInput, "input", "i", "", "input session file path")
+	generateCmd.Flags().StringVarP(&generateOutput, "output", "o", "", "output file path")
+	generateCmd.Flags().StringVarP(&generateFormat, "format", "f", "markdown", "output format (markdown, pdf, docx)")
 }
