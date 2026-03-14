@@ -65,17 +65,17 @@ func TestAnswerValue_IsEmpty(t *testing.T) {
 
 func TestStore_SetAndGetAnswer(t *testing.T) {
 	st := session.New()
-	st.SetAnswer("project_name", session.NewStringValue("my-project"))
+	st.SetAnswer("tool_name", session.NewStringValue("my-tool"))
 
-	ans, ok := st.GetAnswer("project_name")
+	ans, ok := st.GetAnswer("tool_name")
 	if !ok {
 		t.Fatal("GetAnswer: not found")
 	}
-	if ans.QuestionID != "project_name" {
-		t.Errorf("QuestionID = %q, want %q", ans.QuestionID, "project_name")
+	if ans.QuestionID != "tool_name" {
+		t.Errorf("QuestionID = %q, want %q", ans.QuestionID, "tool_name")
 	}
-	if ans.Value.String() != "my-project" {
-		t.Errorf("Value = %q, want %q", ans.Value.String(), "my-project")
+	if ans.Value.String() != "my-tool" {
+		t.Errorf("Value = %q, want %q", ans.Value.String(), "my-tool")
 	}
 	if ans.Skipped {
 		t.Error("Skipped = true, want false")
@@ -84,9 +84,9 @@ func TestStore_SetAndGetAnswer(t *testing.T) {
 
 func TestStore_SkipAnswer(t *testing.T) {
 	st := session.New()
-	st.SkipAnswer("team_size")
+	st.SkipAnswer("binary_name")
 
-	ans, ok := st.GetAnswer("team_size")
+	ans, ok := st.GetAnswer("binary_name")
 	if !ok {
 		t.Fatal("GetAnswer: not found after skip")
 	}
@@ -107,7 +107,7 @@ func TestStore_SetAnswer_UpdatesTimestamp(t *testing.T) {
 	st := session.New()
 	before := st.Session().UpdatedAt
 	time.Sleep(time.Millisecond)
-	st.SetAnswer("project_name", session.NewStringValue("x"))
+	st.SetAnswer("tool_name", session.NewStringValue("x"))
 	after := st.Session().UpdatedAt
 	if !after.After(before) {
 		t.Error("UpdatedAt was not advanced after SetAnswer")
@@ -118,7 +118,7 @@ func TestStore_SkipAnswer_UpdatesTimestamp(t *testing.T) {
 	st := session.New()
 	before := st.Session().UpdatedAt
 	time.Sleep(time.Millisecond)
-	st.SkipAnswer("team_size")
+	st.SkipAnswer("binary_name")
 	after := st.Session().UpdatedAt
 	if !after.After(before) {
 		t.Error("UpdatedAt was not advanced after SkipAnswer")
@@ -127,10 +127,11 @@ func TestStore_SkipAnswer_UpdatesTimestamp(t *testing.T) {
 
 // ---- IsComplete tests ----
 
+// answerCoreRequired provides the three required _core answers.
 func answerCoreRequired(st *session.Store) {
-	st.SetAnswer("project_name", session.NewStringValue("proj"))
-	st.SetAnswer("project_description", session.NewStringValue("desc"))
-	st.SetAnswer("primary_language", session.NewStringValue("Go"))
+	st.SetAnswer("tool_name", session.NewStringValue("mytool"))
+	st.SetAnswer("tool_description", session.NewStringValue("A handy CLI tool"))
+	st.SetAnswer("go_module", session.NewStringValue("github.com/example/mytool"))
 }
 
 func TestStore_IsComplete_AllCoreAnswered(t *testing.T) {
@@ -143,8 +144,8 @@ func TestStore_IsComplete_AllCoreAnswered(t *testing.T) {
 
 func TestStore_IsComplete_MissingRequired(t *testing.T) {
 	st := session.New()
-	st.SetAnswer("project_name", session.NewStringValue("proj"))
-	// project_description and primary_language missing
+	st.SetAnswer("tool_name", session.NewStringValue("mytool"))
+	// tool_description and go_module missing
 	if st.IsComplete() {
 		t.Error("IsComplete() = true, want false when required questions missing")
 	}
@@ -153,7 +154,7 @@ func TestStore_IsComplete_MissingRequired(t *testing.T) {
 func TestStore_IsComplete_SkippedRequired(t *testing.T) {
 	st := session.New()
 	answerCoreRequired(st)
-	st.SkipAnswer("project_name") // override with skip
+	st.SkipAnswer("tool_name") // override with skip
 	if st.IsComplete() {
 		t.Error("IsComplete() = true, want false when required question is skipped")
 	}
@@ -162,7 +163,7 @@ func TestStore_IsComplete_SkippedRequired(t *testing.T) {
 func TestStore_IsComplete_OptionalSkipped(t *testing.T) {
 	st := session.New()
 	answerCoreRequired(st)
-	st.SkipAnswer("team_size") // optional — should not affect completeness
+	st.SkipAnswer("binary_name") // optional — should not affect completeness
 	if !st.IsComplete() {
 		t.Error("IsComplete() = false, want true when only optional questions are skipped")
 	}
@@ -171,17 +172,18 @@ func TestStore_IsComplete_OptionalSkipped(t *testing.T) {
 func TestStore_IsComplete_WithFeatures(t *testing.T) {
 	st := session.New()
 	answerCoreRequired(st)
-	st.Session().SelectedFeatures = []string{"testing"}
+	st.Session().SelectedFeatures = []string{"logging"}
 
-	// Required testing questions not answered yet.
+	// Required logging questions not answered yet.
 	if st.IsComplete() {
 		t.Error("IsComplete() = true, want false when feature required questions unanswered")
 	}
 
-	st.SetAnswer("test_framework", session.NewStringValue("go test"))
-	st.SetAnswer("test_types", session.NewMultiValue([]string{"unit", "integration"}))
+	st.SetAnswer("logging_library", session.NewStringValue("zerolog"))
+	st.SetAnswer("logging_format", session.NewStringValue("json"))
+	st.SetAnswer("logging_output", session.NewStringValue("stderr"))
 	if !st.IsComplete() {
-		t.Error("IsComplete() = false, want true after answering all required testing questions")
+		t.Error("IsComplete() = false, want true after answering all required logging questions")
 	}
 }
 
@@ -190,17 +192,17 @@ func TestStore_IsComplete_WithFeatures(t *testing.T) {
 func TestStore_SaveLoad_RoundTrip(t *testing.T) {
 	st := session.New()
 	s := st.Session()
-	s.CLIProfile = "api_service"
-	s.SelectedFeatures = []string{"storage", "testing"}
+	s.CLIProfile = "oneshot"
+	s.SelectedFeatures = []string{"database", "logging"}
 	s.ExportFormats = []string{"markdown", "pdf"}
 	s.Completed = true
 	s.SessionState = "some-resume-state"
 
-	st.SetAnswer("project_name", session.NewStringValue("my-api"))
-	st.SetAnswer("project_description", session.NewStringValue("A REST API"))
-	st.SetAnswer("primary_language", session.NewStringValue("Go"))
-	st.SkipAnswer("team_size")
-	st.SetAnswer("test_types", session.NewMultiValue([]string{"unit", "e2e"}))
+	st.SetAnswer("tool_name", session.NewStringValue("my-api"))
+	st.SetAnswer("tool_description", session.NewStringValue("A REST API tool"))
+	st.SetAnswer("go_module", session.NewStringValue("github.com/example/my-api"))
+	st.SkipAnswer("binary_name")
+	st.SetAnswer("logging_levels", session.NewMultiValue([]string{"info", "error"}))
 
 	dir := t.TempDir()
 	path := filepath.Join(dir, "session.json")
@@ -308,13 +310,14 @@ func TestStore_Load_InvalidJSON(t *testing.T) {
 func validStore() *session.Store {
 	st := session.New()
 	s := st.Session()
-	s.CLIProfile = "api_service"
-	s.SelectedFeatures = []string{"testing"}
-	st.SetAnswer("project_name", session.NewStringValue("proj"))
-	st.SetAnswer("project_description", session.NewStringValue("desc"))
-	st.SetAnswer("primary_language", session.NewStringValue("Go"))
-	st.SetAnswer("test_framework", session.NewStringValue("go test"))
-	st.SetAnswer("test_types", session.NewMultiValue([]string{"unit"}))
+	s.CLIProfile = "oneshot"
+	s.SelectedFeatures = []string{"logging"}
+	st.SetAnswer("tool_name", session.NewStringValue("mytool"))
+	st.SetAnswer("tool_description", session.NewStringValue("A handy CLI tool"))
+	st.SetAnswer("go_module", session.NewStringValue("github.com/example/mytool"))
+	st.SetAnswer("logging_library", session.NewStringValue("zerolog"))
+	st.SetAnswer("logging_format", session.NewStringValue("json"))
+	st.SetAnswer("logging_output", session.NewStringValue("stderr"))
 	return st
 }
 
@@ -377,7 +380,7 @@ func TestValidate_InvalidFeatureArea(t *testing.T) {
 
 func TestValidate_RequiredQuestionMissing(t *testing.T) {
 	st := validStore()
-	delete(st.Session().Answers, "project_name")
+	delete(st.Session().Answers, "tool_name")
 	err := st.Validate()
 	if err == nil {
 		t.Fatal("Validate() = nil, want error for missing required question")
@@ -385,18 +388,18 @@ func TestValidate_RequiredQuestionMissing(t *testing.T) {
 	errs := err.(session.ValidationErrors)
 	found := false
 	for _, e := range errs {
-		if e.Field == "answers.project_name" {
+		if e.Field == "answers.tool_name" {
 			found = true
 		}
 	}
 	if !found {
-		t.Errorf("expected error for answers.project_name, got: %v", err)
+		t.Errorf("expected error for answers.tool_name, got: %v", err)
 	}
 }
 
 func TestValidate_RequiredQuestionSkipped(t *testing.T) {
 	st := validStore()
-	st.SkipAnswer("project_name") // override required answer with a skip
+	st.SkipAnswer("tool_name") // override required answer with a skip
 	err := st.Validate()
 	if err == nil {
 		t.Fatal("Validate() = nil, want error when required question is skipped")
@@ -404,18 +407,18 @@ func TestValidate_RequiredQuestionSkipped(t *testing.T) {
 	errs := err.(session.ValidationErrors)
 	found := false
 	for _, e := range errs {
-		if e.Field == "answers.project_name" {
+		if e.Field == "answers.tool_name" {
 			found = true
 		}
 	}
 	if !found {
-		t.Errorf("expected error for answers.project_name, got: %v", err)
+		t.Errorf("expected error for answers.tool_name, got: %v", err)
 	}
 }
 
 func TestValidate_RequiredQuestionEmptyAnswer(t *testing.T) {
 	st := validStore()
-	st.SetAnswer("project_name", session.NewStringValue(""))
+	st.SetAnswer("tool_name", session.NewStringValue(""))
 	err := st.Validate()
 	if err == nil {
 		t.Fatal("Validate() = nil, want error for empty required answer")
@@ -423,19 +426,19 @@ func TestValidate_RequiredQuestionEmptyAnswer(t *testing.T) {
 	errs := err.(session.ValidationErrors)
 	found := false
 	for _, e := range errs {
-		if e.Field == "answers.project_name" {
+		if e.Field == "answers.tool_name" {
 			found = true
 		}
 	}
 	if !found {
-		t.Errorf("expected error for answers.project_name, got: %v", err)
+		t.Errorf("expected error for answers.tool_name, got: %v", err)
 	}
 }
 
 func TestValidate_OptionalQuestionMissing_IsAllowed(t *testing.T) {
 	st := validStore()
-	// team_size is optional — not having it should not produce an error
-	delete(st.Session().Answers, "team_size")
+	// binary_name is optional — not having it should not produce an error
+	delete(st.Session().Answers, "binary_name")
 	if err := st.Validate(); err != nil {
 		t.Errorf("Validate() = %v, want nil when optional question is absent", err)
 	}
@@ -443,7 +446,7 @@ func TestValidate_OptionalQuestionMissing_IsAllowed(t *testing.T) {
 
 func TestValidate_OptionalQuestionSkipped_IsAllowed(t *testing.T) {
 	st := validStore()
-	st.SkipAnswer("team_size") // optional, skipped — should be fine
+	st.SkipAnswer("binary_name") // optional, skipped — should be fine
 	if err := st.Validate(); err != nil {
 		t.Errorf("Validate() = %v, want nil when optional question is skipped", err)
 	}
@@ -462,27 +465,28 @@ func TestValidate_CollectsAllErrors(t *testing.T) {
 	}
 	errs := err.(session.ValidationErrors)
 	// Expect: cli_profile error + selected_features error + 3 missing _core required answers
-	// (project_name, project_description, primary_language)
+	// (tool_name, tool_description, go_module)
 	if len(errs) < 3 {
 		t.Errorf("expected at least 3 validation errors, got %d: %v", len(errs), errs)
 	}
 }
 
 func TestValidate_FeatureRequiredQuestions(t *testing.T) {
-	// A session with "deployment" feature selected but deployment questions unanswered.
+	// A session with "database" feature selected but database questions unanswered.
 	st := session.New()
-	st.Session().CLIProfile = "api_service"
-	st.Session().SelectedFeatures = []string{"deployment"}
+	st.Session().CLIProfile = "oneshot"
+	st.Session().SelectedFeatures = []string{"database"}
 	answerCoreRequired(st)
 
 	err := st.Validate()
 	if err == nil {
-		t.Fatal("Validate() = nil, want errors for unanswered deployment questions")
+		t.Fatal("Validate() = nil, want errors for unanswered database questions")
 	}
 	errs := err.(session.ValidationErrors)
 	wantFields := map[string]bool{
-		"answers.deployment_target": true,
-		"answers.containerized":     true,
+		"answers.db_driver": true,
+		"answers.db_orm":    true,
+		"answers.db_schema": true,
 	}
 	for _, e := range errs {
 		delete(wantFields, e.Field)
@@ -494,7 +498,12 @@ func TestValidate_FeatureRequiredQuestions(t *testing.T) {
 
 func TestValidate_MultiValueEmpty(t *testing.T) {
 	st := validStore()
-	st.SetAnswer("test_types", session.NewMultiValue([]string{})) // empty multi
+	// retry_retryable_errors is required multiselect in the retry feature area.
+	// Simulate by adding retry feature and providing an empty multi answer.
+	st.Session().SelectedFeatures = append(st.Session().SelectedFeatures, "retry")
+	st.SetAnswer("retry_strategy", session.NewStringValue("exponential"))
+	st.SetAnswer("retry_max_attempts", session.NewStringValue("3"))
+	st.SetAnswer("retry_retryable_errors", session.NewMultiValue([]string{})) // empty multi
 	err := st.Validate()
 	if err == nil {
 		t.Fatal("Validate() = nil, want error for empty multi-value on required question")
