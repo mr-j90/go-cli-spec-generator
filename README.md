@@ -1,4 +1,4 @@
-# go-cli-spec-generator
+# go-cli-spec-generator WIP
 
 An interactive CLI tool for generating software specification documents through a guided terminal wizard. Built with Go, Cobra, and Bubble Tea.
 
