@@ -22,85 +22,134 @@ type FeatureArea struct {
 	ID          string
 	DisplayName string
 	Description string
+	Icon        string
 }
+
+// InputType is the kind of input expected for a question.
+type InputType = string
+
+const (
+	InputText        InputType = "text"
+	InputSelect      InputType = "select"
+	InputMultiSelect InputType = "multiselect"
+	InputConfirm     InputType = "confirm"
+)
 
 // Question defines a single question in the spec flow.
 type Question struct {
 	ID          string
-	FeatureArea string   // "_core" or a feature area ID
+	FeatureArea string    // "_core" or a feature area ID
 	Text        string
+	InputType   InputType
+	Placeholder string
+	Options     []string // valid choices for select/multiselect
 	Required    bool
 	Multi       bool     // true if the answer is []string (kept for compatibility)
-	InputType   string   // one of the InputType* constants
-	Options     []string // non-empty for single_select and multi_select
-	Placeholder string   // hint text for text and textarea widgets
 }
 
 // Profiles is the registry of valid CLI profile IDs.
+// Profiles represent the interaction pattern of the CLI tool (spec Section 4.1.1).
 var Profiles = map[string]Profile{
-	"api_service": {
-		ID:          "api_service",
-		DisplayName: "API Service",
-		Description: "Backend API service with REST or gRPC endpoints",
+	"oneshot": {
+		ID:          "oneshot",
+		DisplayName: "One-shot",
+		Description: "Runs once, performs a task, and exits (e.g. ls, curl)",
 	},
-	"web_app": {
-		ID:          "web_app",
-		DisplayName: "Web Application",
-		Description: "Web application with frontend and backend",
+	"daemon": {
+		ID:          "daemon",
+		DisplayName: "Daemon",
+		Description: "Runs continuously as a background service or long-lived process",
 	},
-	"cli_tool": {
-		ID:          "cli_tool",
-		DisplayName: "CLI Tool",
-		Description: "Command-line interface tool",
+	"subcommand": {
+		ID:          "subcommand",
+		DisplayName: "Subcommand",
+		Description: "Provides multiple subcommands dispatched by the first argument (e.g. git, docker)",
 	},
-	"library": {
-		ID:          "library",
-		DisplayName: "Library",
-		Description: "Reusable library or package",
-	},
-	"data_pipeline": {
-		ID:          "data_pipeline",
-		DisplayName: "Data Pipeline",
-		Description: "Data processing or ETL pipeline",
+	"hybrid": {
+		ID:          "hybrid",
+		DisplayName: "Hybrid",
+		Description: "Supports both one-shot invocation and daemon/service mode",
 	},
 }
 
 // FeatureAreas is the registry of valid feature area IDs.
-// "_core" is always implicitly included and is not listed here.
+// "_core" is always implicitly included and is not listed here (spec Section 4.1.2).
 var FeatureAreas = map[string]FeatureArea{
 	"authentication": {
 		ID:          "authentication",
 		DisplayName: "Authentication",
 		Description: "User authentication and authorization",
+		Icon:        "🔐",
 	},
 	"storage": {
 		ID:          "storage",
 		DisplayName: "Storage",
 		Description: "Data storage and persistence",
+		Icon:        "💾",
 	},
 	"api": {
 		ID:          "api",
 		DisplayName: "API",
 		Description: "External API endpoints",
+		Icon:        "🔌",
 	},
 	"testing": {
 		ID:          "testing",
 		DisplayName: "Testing",
 		Description: "Testing strategy and coverage",
+		Icon:        "🧪",
 	},
 	"observability": {
 		ID:          "observability",
 		DisplayName: "Observability",
 		Description: "Logging, metrics, and tracing",
+		Icon:        "📈",
 	},
 	"deployment": {
 		ID:          "deployment",
 		DisplayName: "Deployment",
 		Description: "Deployment and infrastructure",
+		Icon:        "🚀",
+	},
+	"security": {
+		ID:          "security",
+		DisplayName: "Security",
+		Description: "Security hardening and vulnerability management",
+		Icon:        "🛡",
+	},
+	"caching": {
+		ID:          "caching",
+		DisplayName: "Caching",
+		Description: "Caching strategies and performance optimization",
+		Icon:        "⚡",
+	},
+	"messaging": {
+		ID:          "messaging",
+		DisplayName: "Messaging",
+		Description: "Message queues, pub/sub, and event streaming",
+		Icon:        "📨",
+	},
+	"search": {
+		ID:          "search",
+		DisplayName: "Search",
+		Description: "Full-text search and indexing",
+		Icon:        "🔍",
+	},
+	"notifications": {
+		ID:          "notifications",
+		DisplayName: "Notifications",
+		Description: "Email, push notifications, and webhooks",
+		Icon:        "🔔",
+	},
+	"configuration": {
+		ID:          "configuration",
+		DisplayName: "Configuration",
+		Description: "App configuration, feature flags, and environment management",
+		Icon:        "⚙",
 	},
 }
 
-// All is the ordered list of all questions in the system.
+// All is the ordered list of all questions in the system (spec Sections 5.2 and 5.3).
 var All = []Question{
 	// _core questions — always included
 	{
@@ -235,7 +284,8 @@ var All = []Question{
 	},
 }
 
-// ByFeatureArea returns all questions belonging to the given feature area.
+// ByFeatureArea returns all questions belonging to the given feature area,
+// preserving their Order within the section.
 func ByFeatureArea(area string) []Question {
 	var result []Question
 	for _, q := range All {
@@ -267,4 +317,14 @@ func IsValidProfile(id string) bool {
 func IsValidFeatureArea(id string) bool {
 	_, ok := FeatureAreas[id]
 	return ok
+}
+
+// FilterByFeatures returns the _core questions followed by the questions for
+// each of the selected feature areas, in the order provided.
+func FilterByFeatures(selected []string) []Question {
+	result := ByFeatureArea("_core")
+	for _, area := range selected {
+		result = append(result, ByFeatureArea(area)...)
+	}
+	return result
 }
