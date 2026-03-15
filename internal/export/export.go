@@ -10,6 +10,7 @@ import (
 type Format string
 
 const (
+	FormatJSON     Format = "json"
 	FormatPDF      Format = "pdf"
 	FormatDOCX     Format = "docx"
 	FormatMarkdown Format = "markdown"

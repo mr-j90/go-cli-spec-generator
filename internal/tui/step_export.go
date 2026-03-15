@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/zyx-holdings/go-spec/internal/export"
+	"github.com/zyx-holdings/go-spec/internal/session"
 )
 
 // ExportDoneMsg is sent when all selected formats have been exported.
@@ -47,15 +48,17 @@ type exportFormatProgress struct {
 
 // ExportStep is the Bubble Tea model for Step 5: Export Format Selection.
 type ExportStep struct {
-	formats    []exportFormatItem
-	cursor     int
-	phase      exportPhase
-	progress   map[string]exportFormatProgress
-	outputDir  string
-	sessionID  string
-	skipStep   bool
-	width      int
-	height     int
+	formats         []exportFormatItem
+	cursor          int
+	phase           exportPhase
+	progress        map[string]exportFormatProgress
+	outputDir       string
+	sessionID       string
+	sess            *session.Session
+	specgenVersion  string
+	skipStep        bool
+	width           int
+	height          int
 }
 
 var (
@@ -79,7 +82,11 @@ var (
 // outputDir: directory to write exported files; "" uses the current directory.
 //
 // sessionID: used as the base filename for each exported file.
-func NewExportStep(preselectedFormats []string, outputDir, sessionID string, width, height int) ExportStep {
+//
+// sess: the active session; may be nil (falls back to a stub JSON export).
+//
+// specgenVersion: embedded in JSON exports as the "specgen_version" field.
+func NewExportStep(preselectedFormats []string, outputDir, sessionID string, width, height int, sess *session.Session, specgenVersion string) ExportStep {
 	allFormats := []exportFormatItem{
 		{id: "json", label: "JSON"},
 		{id: "markdown", label: "Markdown"},
@@ -98,14 +105,16 @@ func NewExportStep(preselectedFormats []string, outputDir, sessionID string, wid
 	}
 
 	return ExportStep{
-		formats:   allFormats,
-		phase:     exportPhaseSelecting,
-		progress:  make(map[string]exportFormatProgress),
-		outputDir: outputDir,
-		sessionID: sessionID,
-		skipStep:  len(preselectedFormats) > 0,
-		width:     width,
-		height:    height,
+		formats:        allFormats,
+		phase:          exportPhaseSelecting,
+		progress:       make(map[string]exportFormatProgress),
+		outputDir:      outputDir,
+		sessionID:      sessionID,
+		sess:           sess,
+		specgenVersion: specgenVersion,
+		skipStep:       len(preselectedFormats) > 0,
+		width:          width,
+		height:         height,
 	}
 }
 
@@ -179,6 +188,8 @@ func (e ExportStep) beginExport() (tea.Model, tea.Cmd) {
 
 	outputDir := e.outputDir
 	sessionID := e.sessionID
+	sess := e.sess
+	specgenVersion := e.specgenVersion
 
 	var cmds []tea.Cmd
 	for _, f := range e.formats {
@@ -187,7 +198,7 @@ func (e ExportStep) beginExport() (tea.Model, tea.Cmd) {
 		}
 		fID := f.id // capture loop variable by value
 		cmds = append(cmds, func() tea.Msg {
-			return runExportFormat(fID, outputDir, sessionID)
+			return runExportFormat(fID, outputDir, sessionID, sess, specgenVersion)
 		})
 	}
 	if len(cmds) == 0 {
@@ -320,15 +331,17 @@ func (e ExportStep) ExportCursor() int { return e.cursor }
 
 // runExportFormat performs the actual file export for a single format and
 // returns an ExportProgressMsg. Designed to be called as a tea.Cmd closure.
-func runExportFormat(formatID, outputDir, sessionID string) tea.Msg {
+func runExportFormat(formatID, outputDir, sessionID string, sess *session.Session, specgenVersion string) tea.Msg {
 	ext := formatID // "pdf", "docx", "markdown", "json" all match their extensions
 	if ext == "markdown" {
 		ext = "md"
 	}
-	filename := sessionID + "." + ext
+
+	prefix := sessionID
 	if outputDir != "" {
-		filename = filepath.Join(outputDir, filename)
+		prefix = filepath.Join(outputDir, sessionID)
 	}
+	filename := prefix + "." + ext
 
 	var err error
 	switch formatID {
@@ -339,7 +352,11 @@ func runExportFormat(formatID, outputDir, sessionID string) tea.Msg {
 	case "markdown":
 		err = writeTextFile(filename, "")
 	case "json":
-		err = writeTextFile(filename, "{}")
+		if sess != nil {
+			err = export.ExportJSON(sess, specgenVersion, prefix)
+		} else {
+			err = writeTextFile(filename, "{}")
+		}
 	default:
 		err = fmt.Errorf("unknown format: %s", formatID)
 	}
