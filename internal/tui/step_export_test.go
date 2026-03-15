@@ -12,21 +12,21 @@ import (
 // ── Construction ────────────────────────────────────────────────────────────
 
 func TestNewExportStep_ReturnsModel(t *testing.T) {
-	m := tui.NewExportStep(nil, "", "test-session", 80, 24)
+	m := tui.NewExportStep(nil, "", "test-session", 80, 24, nil, "")
 	if m.View() == "" {
 		t.Error("View() returned empty string")
 	}
 }
 
 func TestNewExportStep_ViewContainsTitle(t *testing.T) {
-	m := tui.NewExportStep(nil, "", "test-session", 80, 24)
+	m := tui.NewExportStep(nil, "", "test-session", 80, 24, nil, "")
 	if !strings.Contains(m.View(), "Step 5") {
 		t.Errorf("View() does not contain 'Step 5': %q", m.View())
 	}
 }
 
 func TestNewExportStep_ViewContainsAllFormats(t *testing.T) {
-	m := tui.NewExportStep(nil, "", "test-session", 80, 24)
+	m := tui.NewExportStep(nil, "", "test-session", 80, 24, nil, "")
 	v := m.View()
 	for _, label := range []string{"JSON", "Markdown", "Word Document", "PDF"} {
 		if !strings.Contains(v, label) {
@@ -36,35 +36,35 @@ func TestNewExportStep_ViewContainsAllFormats(t *testing.T) {
 }
 
 func TestNewExportStep_InitialCursorIsZero(t *testing.T) {
-	m := tui.NewExportStep(nil, "", "test-session", 80, 24)
+	m := tui.NewExportStep(nil, "", "test-session", 80, 24, nil, "")
 	if m.ExportCursor() != 0 {
 		t.Errorf("ExportCursor() = %d, want 0", m.ExportCursor())
 	}
 }
 
 func TestNewExportStep_InitReturnsNilWithoutPreselect(t *testing.T) {
-	m := tui.NewExportStep(nil, "", "test-session", 80, 24)
+	m := tui.NewExportStep(nil, "", "test-session", 80, 24, nil, "")
 	if m.Init() != nil {
 		t.Error("Init() should be nil when no preselected formats")
 	}
 }
 
 func TestNewExportStep_NotSkippedByDefault(t *testing.T) {
-	m := tui.NewExportStep(nil, "", "test-session", 80, 24)
+	m := tui.NewExportStep(nil, "", "test-session", 80, 24, nil, "")
 	if m.IsSkipped() {
 		t.Error("IsSkipped() should be false when no preselected formats")
 	}
 }
 
 func TestNewExportStep_NotDoneInitially(t *testing.T) {
-	m := tui.NewExportStep(nil, "", "test-session", 80, 24)
+	m := tui.NewExportStep(nil, "", "test-session", 80, 24, nil, "")
 	if m.IsDone() {
 		t.Error("IsDone() should be false initially")
 	}
 }
 
 func TestNewExportStep_NoFormatsSelectedInitially(t *testing.T) {
-	m := tui.NewExportStep(nil, "", "test-session", 80, 24)
+	m := tui.NewExportStep(nil, "", "test-session", 80, 24, nil, "")
 	if len(m.SelectedFormats()) != 0 {
 		t.Errorf("SelectedFormats() = %v, want empty", m.SelectedFormats())
 	}
@@ -73,7 +73,7 @@ func TestNewExportStep_NoFormatsSelectedInitially(t *testing.T) {
 // ── Preselected formats (--format flag) ──────────────────────────────────────
 
 func TestNewExportStep_PreselectedFormatsAreChecked(t *testing.T) {
-	m := tui.NewExportStep([]string{"pdf", "json"}, "", "test-session", 80, 24)
+	m := tui.NewExportStep([]string{"pdf", "json"}, "", "test-session", 80, 24, nil, "")
 	selected := m.SelectedFormats()
 	if len(selected) != 2 {
 		t.Fatalf("SelectedFormats() len = %d, want 2", len(selected))
@@ -88,14 +88,14 @@ func TestNewExportStep_PreselectedFormatsAreChecked(t *testing.T) {
 }
 
 func TestNewExportStep_PreselectedMarksAsSkipped(t *testing.T) {
-	m := tui.NewExportStep([]string{"markdown"}, "", "test-session", 80, 24)
+	m := tui.NewExportStep([]string{"markdown"}, "", "test-session", 80, 24, nil, "")
 	if !m.IsSkipped() {
 		t.Error("IsSkipped() should be true when preselected formats provided")
 	}
 }
 
 func TestNewExportStep_PreselectedInitReturnsCmdNotNil(t *testing.T) {
-	m := tui.NewExportStep([]string{"pdf"}, "", "test-session", 80, 24)
+	m := tui.NewExportStep([]string{"pdf"}, "", "test-session", 80, 24, nil, "")
 	if m.Init() == nil {
 		t.Error("Init() should return non-nil cmd when preselected formats are set")
 	}
@@ -104,7 +104,7 @@ func TestNewExportStep_PreselectedInitReturnsCmdNotNil(t *testing.T) {
 // ── Navigation ───────────────────────────────────────────────────────────────
 
 func TestExportStep_DownMovesCursor(t *testing.T) {
-	m := tui.NewExportStep(nil, "", "test-session", 80, 24)
+	m := tui.NewExportStep(nil, "", "test-session", 80, 24, nil, "")
 	updated, _ := sendKey(m, tea.KeyDown)
 	es := updated.(tui.ExportStep)
 	if es.ExportCursor() != 1 {
@@ -113,7 +113,7 @@ func TestExportStep_DownMovesCursor(t *testing.T) {
 }
 
 func TestExportStep_UpDoesNotGoBelowZero(t *testing.T) {
-	m := tui.NewExportStep(nil, "", "test-session", 80, 24)
+	m := tui.NewExportStep(nil, "", "test-session", 80, 24, nil, "")
 	updated, _ := sendKey(m, tea.KeyUp)
 	es := updated.(tui.ExportStep)
 	if es.ExportCursor() != 0 {
@@ -122,7 +122,7 @@ func TestExportStep_UpDoesNotGoBelowZero(t *testing.T) {
 }
 
 func TestExportStep_DownDoesNotExceedLastFormat(t *testing.T) {
-	m := tui.NewExportStep(nil, "", "test-session", 80, 24)
+	m := tui.NewExportStep(nil, "", "test-session", 80, 24, nil, "")
 	// 4 formats → max cursor = 3
 	for i := 0; i < 10; i++ {
 		updated, _ := sendKey(m, tea.KeyDown)
@@ -136,7 +136,7 @@ func TestExportStep_DownDoesNotExceedLastFormat(t *testing.T) {
 // ── Format selection ─────────────────────────────────────────────────────────
 
 func TestExportStep_SpaceTogglesFormatOn(t *testing.T) {
-	m := tui.NewExportStep(nil, "", "test-session", 80, 24)
+	m := tui.NewExportStep(nil, "", "test-session", 80, 24, nil, "")
 	updated, _ := sendKey(m, tea.KeySpace)
 	es := updated.(tui.ExportStep)
 	sel := es.SelectedFormats()
@@ -146,7 +146,7 @@ func TestExportStep_SpaceTogglesFormatOn(t *testing.T) {
 }
 
 func TestExportStep_SpaceTogglesFormatOff(t *testing.T) {
-	m := tui.NewExportStep(nil, "", "test-session", 80, 24)
+	m := tui.NewExportStep(nil, "", "test-session", 80, 24, nil, "")
 	updated, _ := sendKey(m, tea.KeySpace) // select json
 	updated, _ = sendKey(updated, tea.KeySpace) // deselect json
 	es := updated.(tui.ExportStep)
@@ -156,7 +156,7 @@ func TestExportStep_SpaceTogglesFormatOff(t *testing.T) {
 }
 
 func TestExportStep_SpaceOnSecondItem(t *testing.T) {
-	m := tui.NewExportStep(nil, "", "test-session", 80, 24)
+	m := tui.NewExportStep(nil, "", "test-session", 80, 24, nil, "")
 	updated, _ := sendKey(m, tea.KeyDown)   // move to markdown
 	updated, _ = sendKey(updated, tea.KeySpace) // select markdown
 	es := updated.(tui.ExportStep)
@@ -167,7 +167,7 @@ func TestExportStep_SpaceOnSecondItem(t *testing.T) {
 }
 
 func TestExportStep_MultipleFormatsCanBeSelected(t *testing.T) {
-	m := tui.NewExportStep(nil, "", "test-session", 80, 24)
+	m := tui.NewExportStep(nil, "", "test-session", 80, 24, nil, "")
 	updated, _ := sendKey(m, tea.KeySpace) // select json (cursor 0)
 	updated, _ = sendKey(updated, tea.KeyDown)
 	updated, _ = sendKey(updated, tea.KeySpace) // select markdown (cursor 1)
@@ -180,7 +180,7 @@ func TestExportStep_MultipleFormatsCanBeSelected(t *testing.T) {
 // ── Enter key validation ─────────────────────────────────────────────────────
 
 func TestExportStep_EnterWithNoSelectionDoesNotProceed(t *testing.T) {
-	m := tui.NewExportStep(nil, "", "test-session", 80, 24)
+	m := tui.NewExportStep(nil, "", "test-session", 80, 24, nil, "")
 	updated, cmd := sendKey(m, tea.KeyEnter)
 	es := updated.(tui.ExportStep)
 	if es.IsDone() {
@@ -192,7 +192,7 @@ func TestExportStep_EnterWithNoSelectionDoesNotProceed(t *testing.T) {
 }
 
 func TestExportStep_EnterWithSelectionStartsExporting(t *testing.T) {
-	m := tui.NewExportStep(nil, "", "test-session", 80, 24)
+	m := tui.NewExportStep(nil, "", "test-session", 80, 24, nil, "")
 	updated, _ := sendKey(m, tea.KeySpace) // select json
 	updated, cmd := sendKey(updated, tea.KeyEnter)
 	es := updated.(tui.ExportStep)
@@ -206,14 +206,14 @@ func TestExportStep_EnterWithSelectionStartsExporting(t *testing.T) {
 }
 
 func TestExportStep_ViewShowsValidationWarningWhenNoSelection(t *testing.T) {
-	m := tui.NewExportStep(nil, "", "test-session", 80, 24)
+	m := tui.NewExportStep(nil, "", "test-session", 80, 24, nil, "")
 	if !strings.Contains(m.View(), "least one") {
 		t.Error("View() should warn when no format is selected")
 	}
 }
 
 func TestExportStep_ViewHidesValidationWarningWhenSelected(t *testing.T) {
-	m := tui.NewExportStep(nil, "", "test-session", 80, 24)
+	m := tui.NewExportStep(nil, "", "test-session", 80, 24, nil, "")
 	updated, _ := sendKey(m, tea.KeySpace)
 	es := updated.(tui.ExportStep)
 	if strings.Contains(es.View(), "least one") {
@@ -224,7 +224,7 @@ func TestExportStep_ViewHidesValidationWarningWhenSelected(t *testing.T) {
 // ── Export progress ───────────────────────────────────────────────────────────
 
 func TestExportStep_ProgressMsgUpdatesView(t *testing.T) {
-	m := tui.NewExportStep(nil, "", "test-session", 80, 24)
+	m := tui.NewExportStep(nil, "", "test-session", 80, 24, nil, "")
 	updated, _ := sendKey(m, tea.KeySpace) // select json
 	updated, _ = sendKey(updated, tea.KeyEnter) // start export
 
@@ -241,7 +241,7 @@ func TestExportStep_ProgressMsgUpdatesView(t *testing.T) {
 }
 
 func TestExportStep_ProgressMsgDoneEmitsExportDoneMsg(t *testing.T) {
-	m := tui.NewExportStep(nil, "", "test-session", 80, 24)
+	m := tui.NewExportStep(nil, "", "test-session", 80, 24, nil, "")
 	updated, _ := sendKey(m, tea.KeySpace) // select json
 	updated, _ = sendKey(updated, tea.KeyEnter)
 
@@ -261,7 +261,7 @@ func TestExportStep_ProgressMsgDoneEmitsExportDoneMsg(t *testing.T) {
 }
 
 func TestExportStep_PartialProgressDoesNotFinish(t *testing.T) {
-	m := tui.NewExportStep(nil, "", "test-session", 80, 24)
+	m := tui.NewExportStep(nil, "", "test-session", 80, 24, nil, "")
 	// Select two formats
 	updated, _ := sendKey(m, tea.KeySpace) // json
 	updated, _ = sendKey(updated, tea.KeyDown)
@@ -289,7 +289,7 @@ func TestExportStep_PartialProgressDoesNotFinish(t *testing.T) {
 // ── View content by phase ────────────────────────────────────────────────────
 
 func TestExportStep_ViewShowsExportingState(t *testing.T) {
-	m := tui.NewExportStep(nil, "", "test-session", 80, 24)
+	m := tui.NewExportStep(nil, "", "test-session", 80, 24, nil, "")
 	updated, _ := sendKey(m, tea.KeySpace)
 	updated, _ = sendKey(updated, tea.KeyEnter)
 	es := updated.(tui.ExportStep)
@@ -299,7 +299,7 @@ func TestExportStep_ViewShowsExportingState(t *testing.T) {
 }
 
 func TestExportStep_ViewShowsDoneState(t *testing.T) {
-	m := tui.NewExportStep(nil, "", "test-session", 80, 24)
+	m := tui.NewExportStep(nil, "", "test-session", 80, 24, nil, "")
 	updated, _ := sendKey(m, tea.KeySpace)
 	updated, _ = sendKey(updated, tea.KeyEnter)
 	updated, _ = updated.Update(tui.ExportProgressMsg{
@@ -319,7 +319,7 @@ func TestExportStep_ViewShowsDoneState(t *testing.T) {
 // ── Window resize ────────────────────────────────────────────────────────────
 
 func TestExportStep_WindowResizeUpdatesModel(t *testing.T) {
-	m := tui.NewExportStep(nil, "", "test-session", 80, 24)
+	m := tui.NewExportStep(nil, "", "test-session", 80, 24, nil, "")
 	updated, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	es := updated.(tui.ExportStep)
 	if es.View() == "" {
