@@ -13,6 +13,7 @@ type FeatureArea struct {
 	ID          string
 	DisplayName string
 	Description string
+	Icon        string
 }
 
 // InputType is the kind of input expected for a question.
@@ -65,65 +66,77 @@ var Profiles = map[string]Profile{
 // FeatureAreas is the registry of valid feature area IDs.
 // "_core" is always implicitly included and is not listed here (spec Section 4.1.2).
 var FeatureAreas = map[string]FeatureArea{
+	"authentication": {
+		ID:          "authentication",
+		DisplayName: "Authentication",
+		Description: "User authentication and authorization",
+		Icon:        "🔐",
+	},
+	"storage": {
+		ID:          "storage",
+		DisplayName: "Storage",
+		Description: "Data storage and persistence",
+		Icon:        "💾",
+	},
 	"api": {
 		ID:          "api",
-		DisplayName: "API Client",
-		Description: "HTTP/RPC API client calls to external services",
+		DisplayName: "API",
+		Description: "External API endpoints",
+		Icon:        "🔌",
 	},
-	"database": {
-		ID:          "database",
-		DisplayName: "Database",
-		Description: "Relational or document database access and migrations",
+	"testing": {
+		ID:          "testing",
+		DisplayName: "Testing",
+		Description: "Testing strategy and coverage",
+		Icon:        "🧪",
 	},
-	"filesystem": {
-		ID:          "filesystem",
-		DisplayName: "Filesystem",
-		Description: "File and directory read/write/watch operations",
+	"observability": {
+		ID:          "observability",
+		DisplayName: "Observability",
+		Description: "Logging, metrics, and tracing",
+		Icon:        "📈",
 	},
-	"concurrency": {
-		ID:          "concurrency",
-		DisplayName: "Concurrency",
-		Description: "Goroutine-based parallel processing and worker pools",
+	"deployment": {
+		ID:          "deployment",
+		DisplayName: "Deployment",
+		Description: "Deployment and infrastructure",
+		Icon:        "🚀",
 	},
-	"retry": {
-		ID:          "retry",
-		DisplayName: "Retry",
-		Description: "Backoff and retry logic for transient failures",
+	"security": {
+		ID:          "security",
+		DisplayName: "Security",
+		Description: "Security hardening and vulnerability management",
+		Icon:        "🛡",
 	},
-	"config": {
-		ID:          "config",
+	"caching": {
+		ID:          "caching",
+		DisplayName: "Caching",
+		Description: "Caching strategies and performance optimization",
+		Icon:        "⚡",
+	},
+	"messaging": {
+		ID:          "messaging",
+		DisplayName: "Messaging",
+		Description: "Message queues, pub/sub, and event streaming",
+		Icon:        "📨",
+	},
+	"search": {
+		ID:          "search",
+		DisplayName: "Search",
+		Description: "Full-text search and indexing",
+		Icon:        "🔍",
+	},
+	"notifications": {
+		ID:          "notifications",
+		DisplayName: "Notifications",
+		Description: "Email, push notifications, and webhooks",
+		Icon:        "🔔",
+	},
+	"configuration": {
+		ID:          "configuration",
 		DisplayName: "Configuration",
-		Description: "Configuration loading from files, env vars, and flags",
-	},
-	"hooks": {
-		ID:          "hooks",
-		DisplayName: "Hooks",
-		Description: "Pre/post lifecycle hooks and plugin extension points",
-	},
-	"auth": {
-		ID:          "auth",
-		DisplayName: "Authentication",
-		Description: "Credential management and authentication flows",
-	},
-	"logging": {
-		ID:          "logging",
-		DisplayName: "Logging",
-		Description: "Structured logging with configurable levels and output",
-	},
-	"http": {
-		ID:          "http",
-		DisplayName: "HTTP",
-		Description: "HTTP client or server functionality",
-	},
-	"templates": {
-		ID:          "templates",
-		DisplayName: "Templates",
-		Description: "Text or HTML template rendering",
-	},
-	"statemachine": {
-		ID:          "statemachine",
-		DisplayName: "State Machine",
-		Description: "Finite-state machine for modelling lifecycle transitions",
+		Description: "App configuration, feature flags, and environment management",
+		Icon:        "⚙",
 	},
 }
 
